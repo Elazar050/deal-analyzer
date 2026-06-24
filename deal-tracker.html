@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Land Deal Tracker — Dallas</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f7f8f5;--sur:#fff;--brd:#e2e8dc;--tx:#1a1a18;--mu:#6b7a62;
+  --gd:#1a3d0e;--gm:#5cb82e;--gl:#7ed444;--r:10px;
+  --amber:#854F0B;--amber-bg:#FAEEDA;
+  --green:#27500A;--green-bg:#EAF3DE;
+  --red:#791F1F;--red-bg:#FCEBEB;
+  --blue:#0C447C;--blue-bg:#E6F1FB;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px;}
+
+/* HEADER */
+.header{background:var(--gd);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;}
+.header-title{font-size:17px;font-weight:700;color:#fff;}
+.header-sub{font-size:12px;color:rgba(255,255,255,.55);margin-top:1px;}
+.btn-add{background:var(--gm);color:#fff;border:none;border-radius:7px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-add:hover{background:#4aa824;}
+
+/* STATS BAR */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--brd);border-bottom:1px solid var(--brd);}
+.stat{background:var(--sur);padding:14px 20px;}
+.stat-label{font-size:11px;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+.stat-val{font-size:22px;font-weight:700;color:var(--tx);}
+
+/* MAIN */
+.main{max-width:1200px;margin:0 auto;padding:24px 20px;}
+
+/* FILTERS */
+.filters{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.filter-btn{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--brd);background:var(--sur);color:var(--mu);cursor:pointer;}
+.filter-btn.active{background:var(--gd);color:#fff;border-color:var(--gd);}
+
+/* DEALS GRID */
+.deals-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;}
+.deal-card{background:var(--sur);border:1px solid var(--brd);border-radius:var(--r);overflow:hidden;transition:box-shadow .15s;}
+.deal-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.08);}
+.deal-card-header{padding:14px 16px 10px;border-bottom:1px solid var(--brd);display:flex;justify-content:space-between;align-items:flex-start;}
+.deal-name{font-size:15px;font-weight:700;color:var(--tx);margin-bottom:2px;}
+.deal-address{font-size:12px;color:var(--mu);}
+.deal-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.badge-hot{background:#EAF3DE;color:#27500A;}
+.badge-review{background:#FAEEDA;color:#854F0B;}
+.badge-pass{background:#FCEBEB;color:#791F1F;}
+.badge-new{background:#E6F1FB;color:#0C447C;}
+.deal-body{padding:14px 16px;}
+.deal-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.ds{background:var(--bg);border-radius:6px;padding:8px 10px;}
+.ds-label{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;}
+.ds-val{font-size:14px;font-weight:700;color:var(--tx);}
+.score-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.score-label{font-size:12px;color:var(--mu);min-width:60px;}
+.score-bar-bg{flex:1;height:6px;border-radius:3px;background:var(--brd);overflow:hidden;}
+.score-bar-fill{height:100%;border-radius:3px;background:var(--gm);}
+.score-pct{font-size:12px;font-weight:700;min-width:30px;text-align:right;}
+.deal-footer{padding:10px 16px;border-top:1px solid var(--brd);display:flex;gap:6px;}
+.btn-sm{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--brd);background:var(--sur);color:var(--mu);}
+.btn-sm:hover{background:var(--bg);}
+.btn-sm.primary{background:var(--gd);color:#fff;border-color:var(--gd);}
+.btn-sm.danger{background:#FCEBEB;color:#791F1F;border-color:#F7C1C1;}
+
+/* EMPTY */
+.empty{text-align:center;padding:60px 20px;color:var(--mu);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.empty-title{font-size:16px;font-weight:600;color:var(--tx);margin-bottom:6px;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--sur);border-radius:var(--r);width:100%;max-width:640px;margin:auto;}
+.modal-header{padding:18px 20px;border-bottom:1px solid var(--brd);display:flex;justify-content:space-between;align-items:center;}
+.modal-title{font-size:16px;font-weight:700;}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--mu);line-height:1;}
+.modal-body{padding:20px;}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--brd);display:flex;justify-content:flex-end;gap:8px;}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.form-full{grid-column:1/-1;}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;padding:8px 10px;border:1px solid var(--brd);border-radius:6px;font-size:13px;color:var(--tx);background:#fafafa;font-family:inherit;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--gm);}
+.field textarea{resize:vertical;min-height:60px;}
+
+/* CHECKLIST IN MODAL */
+.checklist-section{margin-bottom:14px;}
+.cl-title{font-size:11px;font-weight:700;color:var(--gd);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid var(--gl);}
+.cl-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #f0f4ee;}
+.cl-item:last-child{border-bottom:none;}
+.cl-item input[type=checkbox]{margin-top:2px;accent-color:var(--gm);}
+.cl-item-text{font-size:12px;color:var(--tx);}
+.cl-item-sub{font-size:11px;color:var(--mu);}
+.cl-badge{font-size:10px;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:600;}
+.cl-must{background:#FCEBEB;color:#791F1F;}
+.cl-imp{background:#EAF3DE;color:#27500A;}
+
+/* STATUS TIMELINE */
+.status-bar{display:flex;gap:4px;margin-bottom:16px;}
+.status-step{flex:1;text-align:center;padding:6px 4px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--brd);background:var(--sur);color:var(--mu);}
+.status-step.active{background:var(--gd);color:#fff;border-color:var(--gd);}
+
+@media(max-width:600px){
+  .form-grid{grid-template-columns:1fr;}
+  .stats{grid-template-columns:1fr 1fr;}
+  .header{padding:12px 16px;}
+  .main{padding:16px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">Dallas Land Deal Tracker</div>
+    <div class="header-sub">SE / NW Dallas · 50–100 unit multifamily</div>
+  </div>
+  <button class="btn-add" onclick="openModal()">+ Add deal</button>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-label">Total deals tracked</div><div class="stat-val" id="stat-total">0</div></div>
+  <div class="stat"><div class="stat-label">Hot prospects</div><div class="stat-val" id="stat-hot" style="color:var(--green);">0</div></div>
+  <div class="stat"><div class="stat-label">Under review</div><div class="stat-val" id="stat-review" style="color:var(--amber);">0</div></div>
+  <div class="stat"><div class="stat-label">Avg score</div><div class="stat-val" id="stat-avg">—</div></div>
+</div>
+
+<div class="main">
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all',this)">All deals</button>
+    <button class="filter-btn" onclick="setFilter('hot',this)">Hot</button>
+    <button class="filter-btn" onclick="setFilter('review',this)">Under review</button>
+    <button class="filter-btn" onclick="setFilter('new',this)">New</button>
+    <button class="filter-btn" onclick="setFilter('pass',this)">Pass</button>
+  </div>
+  <div class="deals-grid" id="deals-grid"></div>
+  <div class="empty" id="empty-state">
+    <div class="empty-icon">🗺️</div>
+    <div class="empty-title">No deals tracked yet</div>
+    <div>Click "+ Add deal" to start tracking your first land parcel.</div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Add new deal</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="form-grid">
+        <div class="field form-full"><label>Deal name / nickname</label><input type="text" id="f-name" placeholder="e.g. Lancaster DART Site"></div>
+        <div class="field form-full"><label>Address or area</label><input type="text" id="f-address" placeholder="e.g. 1234 S Lancaster Rd, Southeast Dallas"></div>
+        <div class="field"><label>Acres</label><input type="number" id="f-acres" placeholder="e.g. 2.5" step="0.1"></div>
+        <div class="field"><label>Asking price ($)</label><input type="number" id="f-price" placeholder="e.g. 850000"></div>
+        <div class="field"><label>Zoning</label><input type="text" id="f-zoning" placeholder="e.g. MF-3A"></div>
+        <div class="field"><label>Source</label><input type="text" id="f-source" placeholder="e.g. LoopNet, Broker, Off-market"></div>
+        <div class="field"><label>Projected CAP rate (%)</label><input type="number" id="f-cap" placeholder="e.g. 6.8" step="0.1"></div>
+        <div class="field"><label>Status</label>
+          <select id="f-status">
+            <option value="new">New — just found</option>
+            <option value="review">Under review</option>
+            <option value="hot">Hot — ready to offer</option>
+            <option value="pass">Pass — not moving forward</option>
+          </select>
+        </div>
+        <div class="field form-full"><label>Notes</label><textarea id="f-notes" placeholder="Broker contact, key observations, red flags..."></textarea></div>
+      </div>
+
+      <div class="cl-title" style="font-size:11px;font-weight:700;color:var(--gd);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;padding-bottom:4px;border-bottom:2px solid var(--gl);">Due diligence checklist</div>
+
+      <div class="checklist-section">
+        <div class="cl-title">Must-have</div>
+        <div class="cl-item"><input type="checkbox" id="c1"><label for="c1"><span class="cl-item-text">Size 1.5–3 acres <span class="cl-badge cl-must">must</span></span><div class="cl-item-sub">Enough for 50–100 units with parking</div></label></div>
+        <div class="cl-item"><input type="checkbox" id="c2"><label for="c2"><span class="cl-item-text">Zoning MF-2, MF-3, or MF-3A <span class="cl-badge cl-must">must</span></span><div class="cl-item-sub">Already zoned multifamily — no rezoning risk</div></label></div>
+        <div class="cl-item"><input type="checkbox" id="c3"><label for="c3"><span class="cl-item-text">Utilities at site (water, sewer, electric) <span class="cl-badge cl-must">must</span></span><div class="cl-item-sub">Missing utilities = +$200K–$500K cost</div></label></div>
+        <div class="cl-item"><input type="checkbox" id="c4"><label for="c4"><span class="cl-item-text">No flood plain (FEMA Zone X) <span class="cl-badge cl-must">must</span></span><div class="cl-item-sub">Zone AE/AH = insurance & financing complications</div></label></div>
+        <div class="cl-item"><input type="checkbox" id="c5"><label for="c5"><span class="cl-item-text">Clean title — no liens or major easements <span class="cl-badge cl-must">must</span></span><div class="cl-item-sub">Always order title search before LOI</div></label></div>
+        <div class="cl-item"><input type="checkbox" id="c6"><label for="c6"><span class="cl-item-text">Land price under $30/sqft <span class="cl-badge cl-must">must</span></span><div class="cl-item-sub">SE/NW Dallas median ~$2.4/sqft</div></label></div>
+        <div class="cl-item"><input type="checkbox" id="c7"><label for="c7"><span class="cl-item-text">No environmental issues (Phase I clean) <span class="cl-badge cl-must">must</span></span><div class="cl-item-sub">Old gas stations / industrial = red flag</div></label></div>
+      </div>
+
+      <div class="checklist-section">
+        <div class="cl-title">Location & demand</div>
+        <div class="cl-item"><input type="checkbox" id="c8"><label for="c8"><span class="cl-item-text">Within 20 min of major employer <span class="cl-badge cl-imp">important</span></span><div class="cl-item-sub">Toyota, JPMorgan, Amazon, hospital</div></label></div>
+        <div class="cl-item"><input type="checkbox" id="c9"><label for="c9"><span class="cl-item-text">DART rail or major highway access <span class="cl-badge cl-imp">important</span></span><div class="cl-item-sub">DART = 10–15% rent premium</div></label></div>
+        <div class="cl-item"><input type="checkbox" id="c10"><label for="c10"><span class="cl-item-text">Submarket vacancy under 10% <span class="cl-badge cl-imp">important</span></span><div class="cl-item-sub">DFW avg 12% — look for tighter pockets</div></label></div>
+        <div class="cl-item"><input type="checkbox" id="c11"><label for="c11"><span class="cl-item-text">Nearby retail, grocery, restaurants <span class="cl-badge cl-imp">important</span></span><div class="cl-item-sub">Walkability improves lease-up speed</div></label></div>
+        <div class="cl-item"><input type="checkbox" id="c12"><label for="c12"><span class="cl-item-text">Area in revitalization / gentrification trend <span class="cl-badge cl-imp">important</span></span></label></div>
+      </div>
+
+      <div class="checklist-section">
+        <div class="cl-title">Financial</div>
+        <div class="cl-item"><input type="checkbox" id="c13"><label for="c13"><span class="cl-item-text">Projected CAP rate ≥ 6.5% <span class="cl-badge cl-must">must</span></span></label></div>
+        <div class="cl-item"><input type="checkbox" id="c14"><label for="c14"><span class="cl-item-text">Comparable rents ≥ $1,400/mo (1BR) <span class="cl-badge cl-must">must</span></span></label></div>
+        <div class="cl-item"><input type="checkbox" id="c15"><label for="c15"><span class="cl-item-text">Hard cost estimate under $130/sqft <span class="cl-badge cl-imp">important</span></span></label></div>
+        <div class="cl-item"><input type="checkbox" id="c16"><label for="c16"><span class="cl-item-text">Projected ROI ≥ 8% cash-on-cash <span class="cl-badge cl-must">must</span></span></label></div>
+      </div>
+
+      <div class="checklist-section">
+        <div class="cl-title">Development</div>
+        <div class="cl-item"><input type="checkbox" id="c17"><label for="c17"><span class="cl-item-text">Flat terrain — minimal grading needed <span class="cl-badge cl-imp">important</span></span></label></div>
+        <div class="cl-item"><input type="checkbox" id="c18"><label for="c18"><span class="cl-item-text">Permit timeline under 6 months <span class="cl-badge cl-imp">important</span></span></label></div>
+        <div class="cl-item"><input type="checkbox" id="c19"><label for="c19"><span class="cl-item-text">No historic overlay or deed restrictions <span class="cl-badge cl-imp">important</span></span></label></div>
+        <div class="cl-item"><input type="checkbox" id="c20"><label for="c20"><span class="cl-item-text">Contractor estimate obtained <span class="cl-badge cl-imp">important</span></span><div class="cl-item-sub">Get hard cost estimate before making offer</div></label></div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm" onclick="closeModal()">Cancel</button>
+      <button class="btn-sm primary" onclick="saveDeal()">Save deal</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'dallas-deal-tracker-v1';
+let deals = [];
+let editingId = null;
+let currentFilter = 'all';
+
+function load() {
+  try { deals = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e) { deals = []; }
+  render();
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(deals));
+}
+
+function getScore(deal) {
+  const checks = deal.checks || {};
+  const total = 20;
+  const checked = Object.values(checks).filter(Boolean).length;
+  return { checked, total, pct: Math.round(checked / total * 100) };
+}
+
+function getStatusLabel(status) {
+  return { hot: 'Hot', review: 'Under review', pass: 'Pass', new: 'New' }[status] || 'New';
+}
+
+function getBadgeClass(status) {
+  return { hot: 'badge-hot', review: 'badge-review', pass: 'badge-pass', new: 'badge-new' }[status] || 'badge-new';
+}
+
+function getScoreColor(pct) {
+  if (pct >= 75) return '#3B6D11';
+  if (pct >= 50) return '#854F0B';
+  return '#A32D2D';
+}
+
+function fmtPrice(n) {
+  if (!n) return '—';
+  const num = parseFloat(n);
+  if (num >= 1e6) return '$' + (num / 1e6).toFixed(2) + 'M';
+  return '$' + Math.round(num).toLocaleString();
+}
+
+function render() {
+  const filtered = currentFilter === 'all' ? deals : deals.filter(d => d.status === currentFilter);
+  const grid = document.getElementById('deals-grid');
+  const empty = document.getElementById('empty-state');
+
+  const hot = deals.filter(d => d.status === 'hot').length;
+  const review = deals.filter(d => d.status === 'review').length;
+  document.getElementById('stat-total').textContent = deals.length;
+  document.getElementById('stat-hot').textContent = hot;
+  document.getElementById('stat-review').textContent = review;
+  const scores = deals.map(d => getScore(d).pct);
+  document.getElementById('stat-avg').textContent = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) + '%' : '—';
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  grid.innerHTML = filtered.map(deal => {
+    const sc = getScore(deal);
+    const pricePerAcre = deal.price && deal.acres ? fmtPrice(deal.price / deal.acres) + '/ac' : '—';
+    return `<div class="deal-card">
+      <div class="deal-card-header">
+        <div>
+          <div class="deal-name">${deal.name || 'Untitled deal'}</div>
+          <div class="deal-address">${deal.address || 'No address'}</div>
+        </div>
+        <span class="deal-badge ${getBadgeClass(deal.status)}">${getStatusLabel(deal.status)}</span>
+      </div>
+      <div class="deal-body">
+        <div class="deal-stats">
+          <div class="ds"><div class="ds-label">Acres</div><div class="ds-val">${deal.acres || '—'}</div></div>
+          <div class="ds"><div class="ds-label">Price</div><div class="ds-val">${fmtPrice(deal.price)}</div></div>
+          <div class="ds"><div class="ds-label">CAP rate</div><div class="ds-val">${deal.cap ? deal.cap + '%' : '—'}</div></div>
+          <div class="ds"><div class="ds-label">Zoning</div><div class="ds-val">${deal.zoning || '—'}</div></div>
+          <div class="ds"><div class="ds-label">$/acre</div><div class="ds-val" style="font-size:12px;">${pricePerAcre}</div></div>
+          <div class="ds"><div class="ds-label">Source</div><div class="ds-val" style="font-size:12px;">${deal.source || '—'}</div></div>
+        </div>
+        <div class="score-row">
+          <span class="score-label">Checklist</span>
+          <div class="score-bar-bg"><div class="score-bar-fill" style="width:${sc.pct}%;background:${getScoreColor(sc.pct)};"></div></div>
+          <span class="score-pct" style="color:${getScoreColor(sc.pct)};">${sc.pct}%</span>
+        </div>
+        <div style="font-size:11px;color:var(--mu);">${sc.checked} of ${sc.total} criteria met${deal.notes ? ' · ' + deal.notes.substring(0,60) + (deal.notes.length>60?'…':'') : ''}</div>
+      </div>
+      <div class="deal-footer">
+        <button class="btn-sm primary" onclick="editDeal('${deal.id}')">Edit / checklist</button>
+        <button class="btn-sm danger" onclick="deleteDeal('${deal.id}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openModal(id) {
+  editingId = id || null;
+  const deal = id ? deals.find(d => d.id === id) : null;
+  document.getElementById('modal-title').textContent = deal ? 'Edit deal' : 'Add new deal';
+  document.getElementById('f-name').value = deal?.name || '';
+  document.getElementById('f-address').value = deal?.address || '';
+  document.getElementById('f-acres').value = deal?.acres || '';
+  document.getElementById('f-price').value = deal?.price || '';
+  document.getElementById('f-zoning').value = deal?.zoning || '';
+  document.getElementById('f-source').value = deal?.source || '';
+  document.getElementById('f-cap').value = deal?.cap || '';
+  document.getElementById('f-status').value = deal?.status || 'new';
+  document.getElementById('f-notes').value = deal?.notes || '';
+  for (let i = 1; i <= 20; i++) {
+    const cb = document.getElementById('c' + i);
+    if (cb) cb.checked = deal?.checks?.['c' + i] || false;
+  }
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  editingId = null;
+}
+
+function saveDeal() {
+  const checks = {};
+  for (let i = 1; i <= 20; i++) {
+    const cb = document.getElementById('c' + i);
+    if (cb) checks['c' + i] = cb.checked;
+  }
+  const deal = {
+    id: editingId || 'deal_' + Date.now(),
+    name: document.getElementById('f-name').value,
+    address: document.getElementById('f-address').value,
+    acres: document.getElementById('f-acres').value,
+    price: document.getElementById('f-price').value,
+    zoning: document.getElementById('f-zoning').value,
+    source: document.getElementById('f-source').value,
+    cap: document.getElementById('f-cap').value,
+    status: document.getElementById('f-status').value,
+    notes: document.getElementById('f-notes').value,
+    checks,
+    updated: Date.now()
+  };
+  if (editingId) {
+    deals = deals.map(d => d.id === editingId ? deal : d);
+  } else {
+    deals.unshift(deal);
+  }
+  save();
+  render();
+  closeModal();
+}
+
+function editDeal(id) { openModal(id); }
+
+function deleteDeal(id) {
+  if (!confirm('Remove this deal?')) return;
+  deals = deals.filter(d => d.id !== id);
+  save();
+  render();
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal')) closeModal();
+});
+
+load();
+</script>
+</body>
+</html>
