@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Land Deal Analyzer Pro</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@media print {
+  body{background:#fff!important;}
+  .no-print{display:none!important;}
+  .tabs{display:none!important;}
+  .tab-panel{display:none!important;}
+  #tab-results{display:block!important;}
+  footer,#save-indicator{display:none!important;}
+  @page{margin:1.5cm 1.8cm;size:A4;}
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --gd:#1a3d0e;--gm:#5cb82e;--gl:#7ed444;
+  --bg:#f4f6f2;--sur:#fff;--brd:#d8e0d3;
+  --tx:#1a1a1a;--mu:#5a6b54;--r:10px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--tx);font-size:14px;min-height:100vh;}
+.container{max-width:1100px;margin:0 auto;padding:24px 20px;}
+.topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px;}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.proj-input{font-size:17px;font-weight:700;color:var(--gd);border:none;background:transparent;outline:none;width:260px;}
+.proj-input::placeholder{color:#bbb;}
+.save-ind{font-size:11px;color:var(--mu);}
+.btn{padding:8px 14px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--brd);background:#fff;color:var(--mu);}
+.btn-primary{background:var(--gd);color:#fff;border-color:var(--gd);}
+.btn-export{background:#1a4d8a;color:#fff;border-color:#1a4d8a;}
+
+/* TABS */
+.tabs{display:flex;gap:2px;border-bottom:2px solid var(--brd);margin-bottom:20px;}
+.tab-btn{padding:8px 16px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:var(--mu);border-bottom:3px solid transparent;margin-bottom:-2px;border-radius:6px 6px 0 0;}
+.tab-btn:hover{background:#eef4ea;color:var(--gd);}
+.tab-btn.active{color:var(--gd);border-bottom-color:var(--gm);background:#eef4ea;}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+
+/* CARDS */
+.card{background:var(--sur);border:1px solid var(--brd);border-radius:var(--r);padding:18px;margin-bottom:14px;}
+.card-title{font-size:11px;font-weight:700;color:var(--gd);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid var(--gl);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+
+/* TOGGLE BUTTON */
+.toggle-btn{padding:5px 12px;font-size:12px;font-weight:600;border-radius:6px;border:1px solid var(--brd);background:#fff;color:var(--mu);cursor:pointer;white-space:nowrap;}
+.toggle-btn.active{background:#f0f7eb;color:#2a6612;border-color:var(--gm);}
+
+/* SIMPLE COST MODE */
+.simple-mode-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;padding:8px 0 14px;}
+.simple-field label{display:block;font-size:12px;color:var(--mu);font-weight:500;margin-bottom:5px;}
+.simple-field input{width:100%;padding:9px 12px;font-size:18px;font-weight:700;border:1px solid var(--brd);border-radius:7px;background:#fafafa;color:var(--tx);}
+.simple-field input:focus{outline:none;border-color:var(--gm);}
+.simple-field .hint{font-size:11px;color:#94a68e;margin-top:3px;}
+.simple-result{background:#f0f7eb;border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;justify-content:center;}
+.simple-result-label{font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.simple-result-val{font-size:26px;font-weight:700;color:#2a6612;}
+.simple-result-sub{font-size:11px;color:var(--mu);margin-top:3px;}
+.simple-ref{font-size:12px;color:var(--mu);background:#f8faf6;padding:10px 14px;border-radius:6px;margin-top:4px;}
+
+/* COST TABLE */
+.ct{width:100%;border-collapse:collapse;}
+.ct th{font-size:11px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.04em;padding:5px 8px;text-align:left;border-bottom:1px solid var(--brd);}
+.ct th.r{text-align:right;}
+.ct td{padding:5px 8px;border-bottom:1px solid #f0f4ee;vertical-align:middle;}
+.ct tr:last-child td{border-bottom:none;}
+.ct .sec td{background:#f8faf6;font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;padding:7px 8px 3px;}
+.ct .tot td{border-top:2px solid var(--brd);font-weight:700;background:#f8faf6;}
+.ct .sub td{border-top:1px solid var(--brd);font-weight:600;color:var(--gd);background:#f0f7eb;}
+.ct input[type=number]{width:130px;padding:4px 8px;border:1px solid var(--brd);border-radius:5px;background:#fafafa;font-size:13px;color:var(--tx);text-align:right;}
+.ct input[type=number]:focus{outline:none;border-color:var(--gm);background:#fff;}
+.row-pct{font-size:12px;color:var(--mu);text-align:right;}
+
+/* FIELDS */
+.field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;}
+.field label{display:block;font-size:12px;color:var(--mu);margin-bottom:4px;font-weight:500;}
+.field input,.field select{width:100%;padding:7px 10px;font-size:14px;border:1px solid var(--brd);border-radius:6px;background:#fafafa;color:var(--tx);}
+.field input:focus,.field select:focus{outline:none;border-color:var(--gm);}
+.hint{font-size:11px;color:#94a68e;margin-top:2px;}
+
+/* VERDICT */
+.verdict{border-radius:var(--r);padding:16px 20px;margin-bottom:16px;border-left:5px solid;}
+.verdict.good{background:#edf7e6;border-color:#3b8c1a;}
+.verdict.caution{background:#fff8e6;border-color:#c47f00;}
+.verdict.bad{background:#fdecea;border-color:#c0392b;}
+.vt{font-size:18px;font-weight:700;margin-bottom:3px;}
+.vt.good{color:#2a6612;}.vt.caution{color:#8a5800;}.vt.bad{color:#a02020;}
+.vs{font-size:13px;}
+.vs.good{color:#3b6d1a;}.vs.caution{color:#7a4e00;}.vs.bad{color:#8b2020;}
+
+/* KPIs */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px;}
+.kpi{background:var(--sur);border:1px solid var(--brd);border-radius:var(--r);padding:14px;}
+.kpi-l{font-size:10px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
+.kpi-v{font-size:22px;font-weight:700;}
+.kpi-s{font-size:11px;color:var(--mu);margin-top:2px;}
+.green{color:#2a6612;}.amber{color:#8a5800;}.red{color:#a02020;}.blue{color:#1a4d8a;}
+
+/* DETAIL ROWS */
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.ri{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--brd);font-size:13px;}
+.ri:last-child{border-bottom:none;}
+.ri .l{color:var(--mu);}.ri .v{font-weight:600;}
+
+/* BARS */
+.bar-row{margin-bottom:10px;font-size:12px;}
+.bar-top{display:flex;justify-content:space-between;margin-bottom:3px;color:var(--mu);font-weight:500;}
+.bar-bg{height:7px;border-radius:4px;background:var(--bg);overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width .4s;}
+.chart-wrap{position:relative;width:100%;height:220px;}
+
+/* TIMELINE */
+.tl-wrap{display:flex;border-radius:8px;overflow:hidden;margin-bottom:12px;}
+.tl-phase{flex:1;padding:14px 12px;color:#fff;}
+.tl-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.8;margin-bottom:4px;}
+.tl-dur{font-size:15px;font-weight:700;margin-bottom:2px;}
+.tl-cf{font-size:11px;background:rgba(255,255,255,.15);border-radius:4px;padding:2px 7px;display:inline-block;margin-top:4px;}
+
+footer{text-align:center;padding:20px;font-size:12px;color:#94a68e;border-top:1px solid var(--brd);margin-top:10px;}
+@media(max-width:700px){
+  .two-col,.dg,.simple-mode-grid{grid-template-columns:1fr;}
+  .tabs{overflow-x:auto;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="topbar no-print">
+    <div class="topbar-left">
+      <input class="proj-input" type="text" id="project-name" placeholder="Project name...">
+      <span class="save-ind" id="save-indicator"></span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn" onclick="newProject()">+ New</button>
+      <button class="btn btn-export" onclick="exportPDF()">⬇ Export PDF</button>
+    </div>
+  </div>
+
+  <div class="tabs no-print">
+    <button class="tab-btn active" onclick="switchTab('costs',this)">Construction costs</button>
+    <button class="tab-btn" onclick="switchTab('income',this)">Income & expenses</button>
+    <button class="tab-btn" onclick="switchTab('acquisition',this)">Acquisition & settings</button>
+    <button class="tab-btn" onclick="switchTab('results',this)">Results & analysis</button>
+  </div>
+
+  <!-- ══ TAB: COSTS ══ -->
+  <div id="tab-costs" class="tab-panel active">
+
+    <!-- HARD COSTS CARD -->
+    <div class="card">
+      <p class="card-title">
+        <span>Hard costs &nbsp;<span id="hard-total-display" style="color:var(--gd);">$0</span></span>
+        <button class="toggle-btn" id="hard-toggle" onclick="toggleCostMode()">Switch to $/sqft mode</button>
+      </p>
+
+      <!-- SIMPLE MODE -->
+      <div id="simple-mode" style="display:none;">
+        <div class="simple-mode-grid">
+          <div class="simple-field">
+            <label>Hard cost per sqft ($)</label>
+            <input type="number" id="hard_per_sqft" value="120" step="5" oninput="calcSimple()">
+            <div class="hint">Dallas typical: $110–$140/sqft</div>
+          </div>
+          <div class="simple-field">
+            <label>Buildable sqft (BSF)</label>
+            <input type="number" id="bsf_simple" value="461568" oninput="calcSimple()">
+            <div class="hint">Same as Acquisition tab</div>
+          </div>
+          <div class="simple-result">
+            <div class="simple-result-label">Calculated hard cost</div>
+            <div class="simple-result-val" id="simple-result-val">$0</div>
+            <div class="simple-result-sub" id="simple-result-sub">—</div>
+          </div>
+        </div>
+        <div class="simple-ref">
+          <strong>Reference:</strong> &nbsp;Wood-frame: $110–125/sqft &nbsp;·&nbsp; Concrete mid-rise: $130–155/sqft &nbsp;·&nbsp; High-rise: $160–200/sqft
+        </div>
+      </div>
+
+      <!-- DETAILED MODE -->
+      <div id="detailed-mode">
+        <table class="ct">
+          <thead><tr><th>Line item</th><th class="r">Amount ($)</th><th class="r">% of hard</th></tr></thead>
+          <tbody>
+            <tr class="sec"><td colspan="3">Structure & foundation</td></tr>
+            <tr><td>Installation of SOE (Secant)</td><td><input type="number" data-group="hard" value="4000000"></td><td class="row-pct"></td></tr>
+            <tr><td>Concrete structure</td><td><input type="number" data-group="hard" value="20000000"></td><td class="row-pct"></td></tr>
+            <tr><td>Foundation</td><td><input type="number" data-group="hard" value="3000000"></td><td class="row-pct"></td></tr>
+            <tr><td>Dewatering</td><td><input type="number" data-group="hard" value="150000"></td><td class="row-pct"></td></tr>
+            <tr><td>Transport / dispose urban fill</td><td><input type="number" data-group="hard" value="1600000"></td><td class="row-pct"></td></tr>
+            <tr class="sec"><td colspan="3">Exterior & facade</td></tr>
+            <tr><td>Aluminum / brick</td><td><input type="number" data-group="hard" value="9500000"></td><td class="row-pct"></td></tr>
+            <tr><td>Windows</td><td><input type="number" data-group="hard" value="7750000"></td><td class="row-pct"></td></tr>
+            <tr><td>Stucco / waterproofing</td><td><input type="number" data-group="hard" value="300000"></td><td class="row-pct"></td></tr>
+            <tr><td>Water proofing (facade)</td><td><input type="number" data-group="hard" value="300000"></td><td class="row-pct"></td></tr>
+            <tr><td>Water proofing (foundation)</td><td><input type="number" data-group="hard" value="250000"></td><td class="row-pct"></td></tr>
+            <tr><td>Roofing</td><td><input type="number" data-group="hard" value="1500000"></td><td class="row-pct"></td></tr>
+            <tr><td>Blocks / masonry</td><td><input type="number" data-group="hard" value="500000"></td><td class="row-pct"></td></tr>
+            <tr class="sec"><td colspan="3">MEP</td></tr>
+            <tr><td>Plumbing rough</td><td><input type="number" data-group="hard" value="9000000"></td><td class="row-pct"></td></tr>
+            <tr><td>Plumbing fixtures & finishing</td><td><input type="number" data-group="hard" value="2000000"></td><td class="row-pct"></td></tr>
+            <tr><td>Plumbing sprinklers</td><td><input type="number" data-group="hard" value="2538000"></td><td class="row-pct"></td></tr>
+            <tr><td>HVAC</td><td><input type="number" data-group="hard" value="8700000"></td><td class="row-pct"></td></tr>
+            <tr><td>Electric rough / low voltage</td><td><input type="number" data-group="hard" value="9700000"></td><td class="row-pct"></td></tr>
+            <tr><td>Electrical fixtures & finishing</td><td><input type="number" data-group="hard" value="800000"></td><td class="row-pct"></td></tr>
+            <tr><td>Low voltage</td><td><input type="number" data-group="hard" value="800000"></td><td class="row-pct"></td></tr>
+            <tr><td>Fire alarm / arcs</td><td><input type="number" data-group="hard" value="1000000"></td><td class="row-pct"></td></tr>
+            <tr><td>Sewer / water / gas / ConEd</td><td><input type="number" data-group="hard" value="750000"></td><td class="row-pct"></td></tr>
+            <tr><td>Water, seal, fire</td><td><input type="number" data-group="hard" value="300000"></td><td class="row-pct"></td></tr>
+            <tr><td>Generator / cooling tower</td><td><input type="number" data-group="hard" value="400000"></td><td class="row-pct"></td></tr>
+            <tr><td>Elevator</td><td><input type="number" data-group="hard" value="4700000"></td><td class="row-pct"></td></tr>
+            <tr class="sec"><td colspan="3">Interior & finishes</td></tr>
+            <tr><td>Carpentry contract</td><td><input type="number" data-group="hard" value="13920000"></td><td class="row-pct"></td></tr>
+            <tr><td>Framing labor / material / doors</td><td><input type="number" data-group="hard" value="1300000"></td><td class="row-pct"></td></tr>
+            <tr><td>Interior (metal) stairs</td><td><input type="number" data-group="hard" value="700000"></td><td class="row-pct"></td></tr>
+            <tr><td>Kitchens</td><td><input type="number" data-group="hard" value="2700000"></td><td class="row-pct"></td></tr>
+            <tr><td>Appliances</td><td><input type="number" data-group="hard" value="2400000"></td><td class="row-pct"></td></tr>
+            <tr><td>Tiles</td><td><input type="number" data-group="hard" value="2000000"></td><td class="row-pct"></td></tr>
+            <tr><td>Wood floor</td><td><input type="number" data-group="hard" value="1800000"></td><td class="row-pct"></td></tr>
+            <tr><td>Painting</td><td><input type="number" data-group="hard" value="2400000"></td><td class="row-pct"></td></tr>
+            <tr class="sec"><td colspan="3">Site & amenities</td></tr>
+            <tr><td>BPP + landscaping</td><td><input type="number" data-group="hard" value="350000"></td><td class="row-pct"></td></tr>
+            <tr><td>Pavers</td><td><input type="number" data-group="hard" value="600000"></td><td class="row-pct"></td></tr>
+            <tr><td>Parking</td><td><input type="number" data-group="hard" value="400000"></td><td class="row-pct"></td></tr>
+            <tr><td>Rooftop / lounge / co-working / gym</td><td><input type="number" data-group="hard" value="3200000"></td><td class="row-pct"></td></tr>
+            <tr class="sec"><td colspan="3">General conditions</td></tr>
+            <tr><td>Site maintenance / utilities / cleaning</td><td><input type="number" data-group="hard" value="2350000"></td><td class="row-pct"></td></tr>
+            <tr><td>Site protection (sidewalk shed, scaffold)</td><td><input type="number" data-group="hard" value="2700000"></td><td class="row-pct"></td></tr>
+            <tr><td>Site safety</td><td><input type="number" data-group="hard" value="850000"></td><td class="row-pct"></td></tr>
+            <tr><td>Hoist</td><td><input type="number" data-group="hard" value="600000"></td><td class="row-pct"></td></tr>
+            <tr><td>General conditions</td><td><input type="number" data-group="hard" value="1000000"></td><td class="row-pct"></td></tr>
+            <tr><td>GC fee</td><td><input type="number" data-group="hard" value="2000000"></td><td class="row-pct"></td></tr>
+            <tr class="sub"><td>Subtotal</td><td style="text-align:right;" id="hard-sub">$0</td><td></td></tr>
+            <tr><td>Contingency (%)</td><td><input type="number" id="hard-cont-pct" value="5" style="width:70px;"></td><td class="row-pct" id="hard-cont-amt"></td></tr>
+            <tr class="tot"><td>Total hard costs</td><td style="text-align:right;" id="hard-total">$0</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SOFT COSTS -->
+    <div class="card">
+      <p class="card-title">Soft costs <span id="soft-total-display" style="color:var(--gd);">$0</span></p>
+      <table class="ct">
+        <thead><tr><th>Line item</th><th class="r">Amount ($)</th><th class="r">% of soft</th></tr></thead>
+        <tbody>
+          <tr><td>Environmental</td><td><input type="number" data-group="soft" value="2000000"></td><td class="row-pct"></td></tr>
+          <tr><td>DOB permits & fees</td><td><input type="number" data-group="soft" value="500000"></td><td class="row-pct"></td></tr>
+          <tr><td>Geotechnical</td><td><input type="number" data-group="soft" value="150000"></td><td class="row-pct"></td></tr>
+          <tr><td>Architect</td><td><input type="number" data-group="soft" value="1550000"></td><td class="row-pct"></td></tr>
+          <tr><td>Designer</td><td><input type="number" data-group="soft" value="500000"></td><td class="row-pct"></td></tr>
+          <tr><td>Engineer</td><td><input type="number" data-group="soft" value="1200000"></td><td class="row-pct"></td></tr>
+          <tr><td>Construction insurance</td><td><input type="number" data-group="soft" value="3000000"></td><td class="row-pct"></td></tr>
+          <tr><td>Expediting</td><td><input type="number" data-group="soft" value="300000"></td><td class="row-pct"></td></tr>
+          <tr><td>Legal</td><td><input type="number" data-group="soft" value="500000"></td><td class="row-pct"></td></tr>
+          <tr><td>Survey</td><td><input type="number" data-group="soft" value="100000"></td><td class="row-pct"></td></tr>
+          <tr><td>Tax abatements / 421A</td><td><input type="number" data-group="soft" value="250000"></td><td class="row-pct"></td></tr>
+          <tr><td>License and access agreements</td><td><input type="number" data-group="soft" value="250000"></td><td class="row-pct"></td></tr>
+          <tr><td>Real estate tax carry</td><td><input type="number" data-group="soft" value="750000"></td><td class="row-pct"></td></tr>
+          <tr><td>Miscellaneous soft costs</td><td><input type="number" data-group="soft" value="1000000"></td><td class="row-pct"></td></tr>
+          <tr class="sub"><td>Subtotal</td><td style="text-align:right;" id="soft-sub">$0</td><td></td></tr>
+          <tr><td>Contingency (%)</td><td><input type="number" id="soft-cont-pct" value="10" style="width:70px;"></td><td class="row-pct" id="soft-cont-amt"></td></tr>
+          <tr class="tot"><td>Total soft costs</td><td style="text-align:right;" id="soft-total">$0</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- FINANCING COSTS -->
+    <div class="card">
+      <p class="card-title">Financing costs <span id="fin-total-display" style="color:var(--gd);">$0</span></p>
+      <table class="ct">
+        <thead><tr><th>Line item</th><th class="r">Amount ($)</th><th class="r">%</th></tr></thead>
+        <tbody>
+          <tr><td>Mortgage recording tax</td><td><input type="number" data-group="fin" value="5807495"></td><td class="row-pct"></td></tr>
+          <tr><td>Title</td><td><input type="number" data-group="fin" value="725937"></td><td class="row-pct"></td></tr>
+          <tr><td>Senior debt origination fee</td><td><input type="number" data-group="fin" value="2074105"></td><td class="row-pct"></td></tr>
+          <tr><td>Bank admin fee</td><td><input type="number" data-group="fin" value="72000"></td><td class="row-pct"></td></tr>
+          <tr><td>Lender processing fee</td><td><input type="number" data-group="fin" value="50000"></td><td class="row-pct"></td></tr>
+          <tr><td>Third parties</td><td><input type="number" data-group="fin" value="100000"></td><td class="row-pct"></td></tr>
+          <tr><td>Lender legal</td><td><input type="number" data-group="fin" value="150000"></td><td class="row-pct"></td></tr>
+          <tr><td>Borrower legal</td><td><input type="number" data-group="fin" value="75000"></td><td class="row-pct"></td></tr>
+          <tr><td>Mortgage broker</td><td><input type="number" data-group="fin" value="829642"></td><td class="row-pct"></td></tr>
+          <tr><td>Interest reserve — senior</td><td><input type="number" data-group="fin" value="23775571"></td><td class="row-pct"></td></tr>
+          <tr><td>Interest reserve — mezz</td><td><input type="number" data-group="fin" value="0"></td><td class="row-pct"></td></tr>
+          <tr class="tot"><td>Total financing costs</td><td style="text-align:right;" id="fin-total">$0</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ TAB: INCOME ══ -->
+  <div id="tab-income" class="tab-panel">
+    <div class="card">
+      <p class="card-title">Market rate units</p>
+      <table class="ct">
+        <thead><tr><th>Type</th><th class="r"># Units</th><th class="r">Monthly rent ($)</th><th class="r">Annual income</th></tr></thead>
+        <tbody>
+          <tr><td>Studio</td><td><input type="number" id="u_studio" value="98"></td><td><input type="number" id="r_studio" value="3150"></td><td class="row-pct" id="a_studio"></td></tr>
+          <tr><td>1 Bedroom</td><td><input type="number" id="u_1br" value="239"></td><td><input type="number" id="r_1br" value="4250"></td><td class="row-pct" id="a_1br"></td></tr>
+          <tr><td>2 Bedroom</td><td><input type="number" id="u_2br" value="194"></td><td><input type="number" id="r_2br" value="5400"></td><td class="row-pct" id="a_2br"></td></tr>
+          <tr><td>3 Bedroom</td><td><input type="number" id="u_3br" value="44"></td><td><input type="number" id="r_3br" value="6500"></td><td class="row-pct" id="a_3br"></td></tr>
+          <tr class="sub"><td>Market rate total</td><td id="u_mkt_total" style="text-align:right;font-size:12px;color:var(--mu);"></td><td></td><td style="text-align:right;font-weight:700;" id="res_total"></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <p class="card-title">Affordable units</p>
+      <table class="ct">
+        <thead><tr><th>Type</th><th class="r"># Units</th><th class="r">Monthly rent ($)</th><th class="r">Annual income</th></tr></thead>
+        <tbody>
+          <tr><td>Studio (affordable)</td><td><input type="number" id="u_aff_s" value="8"></td><td><input type="number" id="r_aff_s" value="2176"></td><td class="row-pct" id="a_aff_s"></td></tr>
+          <tr><td>1 Bedroom (affordable)</td><td><input type="number" id="u_aff_1" value="8"></td><td><input type="number" id="r_aff_1" value="2331"></td><td class="row-pct" id="a_aff_1"></td></tr>
+          <tr><td>2 Bedroom (affordable)</td><td><input type="number" id="u_aff_2" value="16"></td><td><input type="number" id="r_aff_2" value="2796"></td><td class="row-pct" id="a_aff_2"></td></tr>
+          <tr class="sub"><td>Affordable total</td><td id="u_aff_total" style="text-align:right;font-size:12px;color:var(--mu);"></td><td></td><td style="text-align:right;font-weight:700;" id="aff_total"></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <p class="card-title">Commercial & other income</p>
+      <table class="ct">
+        <thead><tr><th>Item</th><th class="r">Qty</th><th class="r">Monthly rate ($)</th><th class="r">Annual</th></tr></thead>
+        <tbody>
+          <tr><td>Retail (sqft)</td><td><input type="number" id="retail_sqft" value="7770"></td><td><input type="number" id="retail_mo" value="3.75" step="0.25"></td><td class="row-pct" id="a_retail"></td></tr>
+          <tr><td>Parking spaces</td><td><input type="number" id="park_spaces" value="115"></td><td><input type="number" id="park_mo" value="300"></td><td class="row-pct" id="a_parking"></td></tr>
+          <tr><td>Other (annual)</td><td colspan="2"><input type="number" id="other_inc" value="350000" style="width:160px;"></td><td class="row-pct" id="a_other"></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card" style="background:#f8faf6;">
+      <table class="ct">
+        <tbody>
+          <tr><td style="color:var(--mu);">Total gross income</td><td style="text-align:right;font-weight:600;" id="gross_inc">$0</td></tr>
+          <tr><td style="color:var(--mu);">Vacancy rate (%)</td><td><input type="number" id="vacancy" value="5" style="width:70px;text-align:right;"></td></tr>
+          <tr class="sub"><td>Effective gross income (EGI)</td><td style="text-align:right;font-weight:700;" id="egi_display">$0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <p class="card-title">Operating expenses</p>
+        <table class="ct">
+          <thead><tr><th>Item</th><th class="r">Annual ($)</th></tr></thead>
+          <tbody>
+            <tr><td>Real estate taxes</td><td><input type="number" data-group="expense" value="8873848"></td></tr>
+            <tr><td>Water & sewer</td><td><input type="number" data-group="expense" value="333850"></td></tr>
+            <tr><td>Insurance</td><td><input type="number" data-group="expense" value="424900"></td></tr>
+            <tr><td>Utilities</td><td><input type="number" data-group="expense" value="455250"></td></tr>
+            <tr><td>Repairs & maintenance</td><td><input type="number" data-group="expense" value="303500"></td></tr>
+            <tr><td>Payroll & benefits</td><td><input type="number" data-group="expense" value="819450"></td></tr>
+            <tr><td>G & A</td><td><input type="number" data-group="expense" value="303500"></td></tr>
+            <tr><td>Management (% of EGI)</td><td><input type="number" id="mgmt_pct" value="2.5" step="0.5" style="width:70px;text-align:right;"></td></tr>
+            <tr><td>Reserves</td><td><input type="number" data-group="expense" value="151750"></td></tr>
+            <tr class="tot"><td>Total expenses</td><td style="text-align:right;font-weight:700;" id="exp_display">$0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
+        <p style="font-size:13px;color:var(--mu);">Net operating income (NOI)</p>
+        <p style="font-size:34px;font-weight:700;color:#2a6612;margin:8px 0;" id="noi_display">$0</p>
+        <p style="font-size:13px;color:var(--mu);" id="exp_ratio"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: ACQUISITION ══ -->
+  <div id="tab-acquisition" class="tab-panel">
+    <div class="card">
+      <p class="card-title">Acquisition</p>
+      <div class="field-grid">
+        <div class="field"><label>Purchase price ($)</label><input type="number" id="pp" value="75000000"></div>
+        <div class="field"><label>Lot size (sqft)</label><input type="number" id="lotsize" value="38464"></div>
+        <div class="field"><label>Buildable sqft (BSF)</label><input type="number" id="bsf" value="461568"></div>
+        <div class="field"><label>Number of units</label><input type="number" id="units" value="607"></div>
+        <div class="field"><label>LTV ratio (%)</label><input type="number" id="ltv" value="80"><div class="hint">Loan-to-cost %</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="card-title">Market assumptions & thresholds</p>
+      <div class="field-grid">
+        <div class="field"><label>Market CAP rate (%)</label><input type="number" id="mkt_cap" value="5.25" step="0.25"></div>
+        <div class="field"><label>Annual debt interest rate (%)</label><input type="number" id="debt_rate" value="6" step="0.25"></div>
+        <div class="field"><label>Min. ROI threshold (%)</label><input type="number" id="min_roi" value="8"></div>
+        <div class="field"><label>Min. CAP rate threshold (%)</label><input type="number" id="min_cap" value="6.5"></div>
+        <div class="field"><label>Annual NOI growth (%)</label><input type="number" id="noi_growth" value="2.5" step="0.5"></div>
+        <div class="field"><label>Exit CAP rate (%)</label><input type="number" id="exit_cap" value="5.25" step="0.25"></div>
+        <div class="field"><label>Selling costs (%)</label><input type="number" id="sell_cost" value="2" step="0.5"></div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="card-title">Project timeline</p>
+      <div class="field-grid">
+        <div class="field"><label>Pre-dev & permits (months)</label><input type="number" id="tl_predev" value="6"></div>
+        <div class="field"><label>Construction (months)</label><input type="number" id="tl_const" value="29"></div>
+        <div class="field"><label>Lease-up (months)</label><input type="number" id="tl_lease" value="12"></div>
+        <div class="field"><label>Stabilized hold (years)</label><input type="number" id="tl_hold" value="5"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: RESULTS ══ -->
+  <div id="tab-results" class="tab-panel">
+    <div id="verdict" class="verdict good"><p id="vt" class="vt good">—</p><p id="vs" class="vs good">—</p></div>
+
+    <div class="kpi-grid">
+      <div class="kpi"><p class="kpi-l">NOI</p><p class="kpi-v green" id="k_noi">—</p><p class="kpi-s">Net operating income</p></div>
+      <div class="kpi"><p class="kpi-l">CAP rate</p><p class="kpi-v" id="k_cap">—</p><p class="kpi-s">NOI ÷ total cost</p></div>
+      <div class="kpi"><p class="kpi-l">Cash-on-cash ROI</p><p class="kpi-v" id="k_roi">—</p><p class="kpi-s">Cash flow ÷ equity</p></div>
+      <div class="kpi"><p class="kpi-l">AIA / Value</p><p class="kpi-v blue" id="k_aia">—</p><p class="kpi-s">NOI ÷ market CAP</p></div>
+      <div class="kpi"><p class="kpi-l">Profit at value</p><p class="kpi-v" id="k_profit">—</p><p class="kpi-s">Value − total cost</p></div>
+      <div class="kpi"><p class="kpi-l">Underrating</p><p class="kpi-v" id="k_under">—</p><p class="kpi-s">Cost vs. market value</p></div>
+      <div class="kpi"><p class="kpi-l">IRR (5yr)</p><p class="kpi-v" id="k_irr5">—</p><p class="kpi-s">Internal rate of return</p></div>
+      <div class="kpi"><p class="kpi-l">IRR (10yr)</p><p class="kpi-v" id="k_irr10">—</p><p class="kpi-s">Internal rate of return</p></div>
+      <div class="kpi"><p class="kpi-l">Equity multiple (5yr)</p><p class="kpi-v blue" id="k_em5">—</p><p class="kpi-s">Total return ÷ equity</p></div>
+      <div class="kpi"><p class="kpi-l">Equity multiple (10yr)</p><p class="kpi-v blue" id="k_em10">—</p><p class="kpi-s">Total return ÷ equity</p></div>
+      <div class="kpi"><p class="kpi-l">Break-even occupancy</p><p class="kpi-v" id="k_be">—</p><p class="kpi-s">Min. occ. to cover debt</p></div>
+      <div class="kpi"><p class="kpi-l">DSCR</p><p class="kpi-v" id="k_dscr">—</p><p class="kpi-s">NOI ÷ debt (>1.25 safe)</p></div>
+    </div>
+
+    <div class="dg">
+      <div class="card">
+        <p class="card-title">Deal structure</p>
+        <div class="ri"><span class="l">Purchase price</span><span class="v" id="d_pp">—</span></div>
+        <div class="ri"><span class="l">Hard costs</span><span class="v" id="d_hard">—</span></div>
+        <div class="ri"><span class="l">Soft costs</span><span class="v" id="d_soft">—</span></div>
+        <div class="ri"><span class="l">Financing costs</span><span class="v" id="d_fin">—</span></div>
+        <div class="ri"><span class="l">Total project cost</span><span class="v" id="d_total">—</span></div>
+        <div class="ri"><span class="l">Loan amount</span><span class="v" id="d_loan">—</span></div>
+        <div class="ri"><span class="l">Equity needed</span><span class="v" id="d_equity">—</span></div>
+        <div class="ri"><span class="l">Annual debt service</span><span class="v" id="d_debt">—</span></div>
+        <div class="ri"><span class="l">Annual cash flow</span><span class="v" id="d_cf">—</span></div>
+        <div class="ri"><span class="l">Price per BSF</span><span class="v" id="d_psf">—</span></div>
+        <div class="ri"><span class="l">Price per unit</span><span class="v" id="d_ppu">—</span></div>
+      </div>
+      <div class="card"><p class="card-title">Cost allocation</p><div id="cost_bars"></div></div>
+    </div>
+
+    <div class="card">
+      <p class="card-title">Exit strategy — sale scenarios</p>
+      <table class="ct"><thead><tr><th>Hold</th><th class="r">Sale price</th><th class="r">Net profit</th><th class="r">Equity multiple</th><th class="r">IRR</th></tr></thead>
+      <tbody id="exit_tbody"></tbody></table>
+    </div>
+    <div class="card"><p class="card-title">CAP rate sensitivity</p><div class="chart-wrap"><canvas id="capChart"></canvas></div></div>
+    <div class="card"><p class="card-title">Break-even analysis</p><div class="chart-wrap"><canvas id="beChart"></canvas></div></div>
+    <div class="card"><p class="card-title">Project timeline</p><div class="tl-wrap" id="tl_wrap"></div></div>
+  </div>
+
+</div>
+<footer>Land Deal Analyzer Pro &nbsp;·&nbsp; All calculations are estimates only</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmtM=n=>(n>=0?'':'-')+'$'+(Math.abs(n)/1e6).toFixed(1)+'M';
+const fmtD=n=>'$'+Math.round(Math.abs(n)).toLocaleString();
+const fmtP=n=>n.toFixed(2)+'%';
+const g=id=>{const e=$(id);return e?(parseFloat(e.value)||0):0;};
+const fmtAnn=n=>'$'+Math.round(n).toLocaleString();
+
+const SAVE_KEY='deal-pro-v2';
+let capChartObj=null, beChartObj=null;
+let costMode='detailed';
+let saveTimer=null;
+
+// ── TAB SWITCHING ──
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  const panel=$('tab-'+name);
+  if(panel) panel.classList.add('active');
+}
+
+// ── COST MODE TOGGLE ──
+function toggleCostMode(){
+  costMode = costMode==='detailed' ? 'simple' : 'detailed';
+  const btn=$('hard-toggle');
+  const simple=$('simple-mode');
+  const detailed=$('detailed-mode');
+  if(costMode==='simple'){
+    simple.style.display='block';
+    detailed.style.display='none';
+    btn.textContent='Switch to detailed mode';
+    btn.classList.add('active');
+    const bsfVal=g('bsf');
+    if(bsfVal && $('bsf_simple')) $('bsf_simple').value=bsfVal;
+    calcSimple();
+  } else {
+    simple.style.display='none';
+    detailed.style.display='block';
+    btn.textContent='Switch to $/sqft mode';
+    btn.classList.remove('active');
+    calc();
+  }
+}
+
+function calcSimple(){
+  const perSqft=g('hard_per_sqft')||120;
+  const bsfVal=g('bsf_simple')||0;
+  const total=perSqft*bsfVal;
+  if($('simple-result-val')) $('simple-result-val').textContent=fmtD(total);
+  if($('simple-result-sub')) $('simple-result-sub').textContent='$'+perSqft+' × '+bsfVal.toLocaleString()+' sqft';
+  if($('hard-total-display')) $('hard-total-display').textContent=fmtM(total);
+  window._simpleHard=total;
+  calc();
+}
+
+// ── SUM GROUPS ──
+function sumGroup(grp){
+  let t=0;
+  document.querySelectorAll(`input[data-group="${grp}"]`).forEach(el=>{t+=parseFloat(el.value)||0;});
+  return t;
+}
+
+function updatePcts(grp,total){
+  document.querySelectorAll(`input[data-group="${grp}"]`).forEach(el=>{
+    const row=el.closest('tr'); if(!row) return;
+    const cells=row.querySelectorAll('td');
+    const pc=cells[cells.length-1];
+    if(pc&&pc.classList.contains('row-pct'))
+      pc.textContent=total>0?((parseFloat(el.value)||0)/total*100).toFixed(1)+'%':'—';
+  });
+}
+
+// ── IRR ──
+function calcIRR(cfs){
+  let r=0.1;
+  for(let i=0;i<100;i++){
+    let npv=0,dnpv=0;
+    cfs.forEach((cf,t)=>{npv+=cf/Math.pow(1+r,t);dnpv-=t*cf/Math.pow(1+r,t+1);});
+    const nr=r-npv/dnpv;
+    if(Math.abs(nr-r)<1e-7){r=nr;break;}
+    r=nr;
+  }
+  return r*100;
+}
+
+function buildCFs(equity,noi,debt,loan,years,growth,exitCap,sellPct){
+  const cfs=[-equity];
+  let noiY=noi;
+  for(let y=1;y<=years;y++){
+    noiY=noi*Math.pow(1+growth,y);
+    if(y<years){cfs.push(noiY-debt);}
+    else{
+      const sale=exitCap>0?noiY/exitCap:0;
+      const proc=sale-sale*sellPct-loan;
+      cfs.push(noiY-debt+proc);
+    }
+  }
+  return cfs;
+}
+
+function emCalc(equity,noi,debt,loan,years,growth,exitCap,sellPct){
+  let tc=0,noiY=noi;
+  for(let y=1;y<=years;y++){noiY=noi*Math.pow(1+growth,y);tc+=noiY-debt;}
+  const sale=exitCap>0?noiY/exitCap:0;
+  const proc=sale-sale*sellPct-loan;
+  return equity>0?(tc+proc)/equity:0;
+}
+
+// ── MAIN CALC ──
+function calc(){
+  // Hard costs
+  const hardSub=sumGroup('hard');
+  const hardContPct=g('hard-cont-pct')/100;
+  const hardCont=hardSub*hardContPct;
+  const hardTotal=costMode==='simple'&&window._simpleHard ? window._simpleHard : hardSub+hardCont;
+
+  // Soft costs
+  const softSub=sumGroup('soft');
+  const softContPct=g('soft-cont-pct')/100;
+  const softCont=softSub*softContPct;
+  const softTotal=softSub+softCont;
+
+  // Financing
+  const finTotal=sumGroup('fin');
+
+  // Update pcts and subtotals
+  updatePcts('hard',hardSub);
+  updatePcts('soft',softSub);
+  updatePcts('fin',finTotal);
+
+  const si=(id,v)=>{if($(id))$(id).textContent=fmtD(v);};
+  si('hard-sub',hardSub);si('hard-total',hardTotal);si('hard-cont-amt',hardCont);
+  si('soft-sub',softSub);si('soft-total',softTotal);si('soft-cont-amt',softCont);
+  si('fin-total',finTotal);
+  if($('hard-total-display')&&costMode==='detailed') $('hard-total-display').textContent=fmtM(hardTotal);
+  if($('soft-total-display')) $('soft-total-display').textContent=fmtM(softTotal);
+  if($('fin-total-display')) $('fin-total-display').textContent=fmtM(finTotal);
+
+  // Acquisition
+  const pp=g('pp'),bsf=g('bsf'),units=g('units'),ltv=g('ltv')/100;
+  const totalCost=pp+hardTotal+softTotal+finTotal;
+
+  // Income
+  const ann=(u,r)=>(parseFloat($(u)?$(u).value:0)||0)*(parseFloat($(r)?$(r).value:0)||0)*12;
+  const a_s=ann('u_studio','r_studio'),a_1=ann('u_1br','r_1br'),a_2=ann('u_2br','r_2br'),a_3=ann('u_3br','r_3br');
+  const res=a_s+a_1+a_2+a_3;
+  const a_as=ann('u_aff_s','r_aff_s'),a_a1=ann('u_aff_1','r_aff_1'),a_a2=ann('u_aff_2','r_aff_2');
+  const aff=a_as+a_a1+a_a2;
+  const retail=g('retail_sqft')*g('retail_mo')*12;
+  const parking=g('park_spaces')*g('park_mo')*12;
+  const other=g('other_inc');
+  const gross=res+aff+retail+parking+other;
+  const vac=g('vacancy')/100;
+  const egi=gross*(1-vac);
+
+  // Update income display
+  const setA=(id,v)=>{if($(id))$(id).textContent=fmtAnn(v);};
+  setA('a_studio',a_s);setA('a_1br',a_1);setA('a_2br',a_2);setA('a_3br',a_3);
+  setA('a_aff_s',a_as);setA('a_aff_1',a_a1);setA('a_aff_2',a_a2);
+  setA('a_retail',retail);setA('a_parking',parking);setA('a_other',other);
+  setA('res_total',res);setA('aff_total',aff);
+  if($('u_mkt_total'))$('u_mkt_total').textContent=(g('u_studio')+g('u_1br')+g('u_2br')+g('u_3br'))+' units';
+  if($('u_aff_total'))$('u_aff_total').textContent=(g('u_aff_s')+g('u_aff_1')+g('u_aff_2'))+' units';
+  if($('gross_inc'))$('gross_inc').textContent=fmtAnn(gross);
+  if($('egi_display'))$('egi_display').textContent=fmtAnn(egi);
+
+  // Expenses
+  const mgmt=egi*(g('mgmt_pct')/100);
+  const fixedExp=sumGroup('expense');
+  const totalExp=fixedExp+mgmt;
+  const noi=egi-totalExp;
+  if($('exp_display'))$('exp_display').textContent=fmtAnn(totalExp);
+  if($('noi_display'))$('noi_display').textContent=fmtM(noi);
+  if($('exp_ratio'))$('exp_ratio').textContent='Expense ratio: '+(egi>0?(totalExp/egi*100).toFixed(1):0)+'%';
+
+  // Financial metrics
+  const mktCap=g('mkt_cap')/100,minRoi=g('min_roi'),minCap=g('min_cap'),debtRate=g('debt_rate')/100;
+  const noiGrowth=g('noi_growth')/100,exitCap=g('exit_cap')/100,sellCost=g('sell_cost')/100;
+  const capRate=totalCost>0?(noi/totalCost)*100:0;
+  const aia=mktCap>0?noi/mktCap:0;
+  const loan=totalCost*ltv,equity=totalCost-loan;
+  const annDebt=loan*debtRate,cashFlow=noi-annDebt;
+  const roi=equity>0?(cashFlow/equity)*100:0;
+  const profit=aia-totalCost;
+  const under=aia>0?((aia-totalCost)/aia)*100:0;
+  const beOcc=gross>0?((totalExp+annDebt)/gross*100):0;
+  const dscr=annDebt>0?noi/annDebt:0;
+  const irr5=equity>0?calcIRR(buildCFs(equity,noi,annDebt,loan,5,noiGrowth,exitCap,sellCost)):0;
+  const irr10=equity>0?calcIRR(buildCFs(equity,noi,annDebt,loan,10,noiGrowth,exitCap,sellCost)):0;
+  const em5=emCalc(equity,noi,annDebt,loan,5,noiGrowth,exitCap,sellCost);
+  const em10=emCalc(equity,noi,annDebt,loan,10,noiGrowth,exitCap,sellCost);
+
+  // KPIs
+  const sk=(id,txt,cls)=>{if($(id)){$(id).textContent=txt;$(id).className='kpi-v '+cls;}};
+  if($('k_noi'))$('k_noi').textContent=fmtM(noi);
+  sk('k_cap',fmtP(capRate),capRate>=minCap?'green':capRate>=minCap*.85?'amber':'red');
+  sk('k_roi',fmtP(roi),roi>=minRoi?'green':roi>=minRoi*.85?'amber':'red');
+  if($('k_aia'))$('k_aia').textContent=fmtM(aia);
+  if($('k_profit')){$('k_profit').textContent=fmtM(profit);$('k_profit').className='kpi-v '+(profit>0?'green':'red');}
+  sk('k_under',fmtP(under),under>=20?'green':under>=10?'amber':'red');
+  sk('k_irr5',fmtP(irr5),irr5>=15?'green':irr5>=10?'amber':'red');
+  sk('k_irr10',fmtP(irr10),irr10>=15?'green':irr10>=10?'amber':'red');
+  if($('k_em5')){$('k_em5').textContent=em5.toFixed(2)+'x';$('k_em5').className='kpi-v blue';}
+  if($('k_em10')){$('k_em10').textContent=em10.toFixed(2)+'x';$('k_em10').className='kpi-v blue';}
+  sk('k_be',fmtP(beOcc),beOcc<70?'green':beOcc<85?'amber':'red');
+  sk('k_dscr',dscr.toFixed(2)+'x',dscr>=1.25?'green':dscr>=1.0?'amber':'red');
+
+  // Verdict
+  const good=roi>=minRoi&&capRate>=minCap&&profit>0;
+  const ok=(roi>=minRoi*.85||capRate>=minCap*.85)&&profit>0;
+  const st=good?'good':ok?'caution':'bad';
+  if($('verdict')){
+    $('verdict').className='verdict '+st;
+    $('vt').className='vt '+st;
+    $('vs').className='vs '+st;
+    if(good){$('vt').textContent='✓ Deal looks strong';$('vs').textContent=`ROI ${fmtP(roi)} ≥ ${minRoi}% · CAP ${fmtP(capRate)} ≥ ${minCap}% · Profit ${fmtM(profit)}`;}
+    else if(ok){$('vt').textContent='⚠ Deal needs review';$('vs').textContent=(roi<minRoi?`ROI ${fmtP(roi)} below ${minRoi}%. `:'')+(capRate<minCap?`CAP ${fmtP(capRate)} below ${minCap}%.`:'');}
+    else{$('vt').textContent='✗ Deal does not work';$('vs').textContent=`ROI ${fmtP(roi)} vs ${minRoi}% target · CAP ${fmtP(capRate)} vs ${minCap}% target`;}
+  }
+
+  // Deal structure
+  const sv=(id,v)=>{if($(id))$(id).textContent=v;};
+  sv('d_pp',fmtM(pp));sv('d_hard',fmtM(hardTotal));sv('d_soft',fmtM(softTotal));sv('d_fin',fmtM(finTotal));
+  sv('d_total',fmtM(totalCost));sv('d_loan',fmtM(loan));sv('d_equity',fmtM(equity));
+  sv('d_debt',fmtM(annDebt));sv('d_cf',fmtM(cashFlow));
+  sv('d_psf',bsf>0?'$'+Math.round(totalCost/bsf).toLocaleString()+'/sf':'—');
+  sv('d_ppu',units>0?'$'+Math.round(totalCost/units).toLocaleString()+'/unit':'—');
+
+  // Cost bars
+  if($('cost_bars')){
+    const costs=[{l:'Purchase price',v:pp,c:'#1a7fc4'},{l:'Hard costs',v:hardTotal,c:'#5cb82e'},{l:'Financing',v:finTotal,c:'#e6a817'},{l:'Soft costs',v:softTotal,c:'#c0509a'}];
+    const tot=costs.reduce((a,c)=>a+c.v,0),mx=Math.max(...costs.map(c=>c.v));
+    $('cost_bars').innerHTML=costs.map(c=>{
+      const p=tot>0?Math.round(c.v/tot*100):0,w=mx>0?Math.round(c.v/mx*100):0;
+      return`<div class="bar-row"><div class="bar-top"><span>${c.l}</span><span>${fmtM(c.v)} · ${p}%</span></div><div class="bar-bg"><div class="bar-fill" style="width:${w}%;background:${c.c};"></div></div></div>`;
+    }).join('');
+  }
+
+  // Exit table
+  if($('exit_tbody')){
+    $('exit_tbody').innerHTML=[3,5,7,10].map(y=>{
+      const noiY=noi*Math.pow(1+noiGrowth,y);
+      const sale=exitCap>0?noiY/exitCap:0;
+      const proc=sale-sale*sellCost-loan;
+      let tc=0;for(let i=1;i<=y;i++)tc+=noi*Math.pow(1+noiGrowth,i)-annDebt;
+      const np=tc+proc,e=equity>0?(tc+proc)/equity:0;
+      const irr=equity>0?calcIRR(buildCFs(equity,noi,annDebt,loan,y,noiGrowth,exitCap,sellCost)):0;
+      return`<tr><td>${y}-year</td><td style="text-align:right;font-weight:600;">${fmtM(sale)}</td><td style="text-align:right;font-weight:700;color:${np>0?'#2a6612':'#a02020'};">${fmtM(np)}</td><td style="text-align:right;font-weight:700;color:#1a4d8a;">${e.toFixed(2)}x</td><td style="text-align:right;">${irr.toFixed(1)}%</td></tr>`;
+    }).join('');
+  }
+
+  // CAP chart
+  if($('capChart')){
+    const caps=[4,4.5,5,5.25,5.5,6,6.5,7,7.5,8];
+    const vals=caps.map(r=>parseFloat((noi/(r/100)/1e6).toFixed(1)));
+    const mktP=mktCap*100;
+    if(capChartObj){capChartObj.data.datasets[0].data=vals;capChartObj.data.datasets[0].pointRadius=caps.map(r=>Math.abs(r-mktP)<.01?7:3);capChartObj.update();}
+    else{capChartObj=new Chart($('capChart'),{type:'line',data:{labels:caps.map(r=>r+'%'),datasets:[{label:'Value ($M)',data:vals,borderColor:'#1a3d0e',backgroundColor:'rgba(92,184,46,.08)',pointBackgroundColor:caps.map(r=>Math.abs(r-mktP)<.01?'#5cb82e':'transparent'),pointBorderColor:'#1a3d0e',pointRadius:caps.map(r=>Math.abs(r-mktP)<.01?7:3),tension:.3,fill:true,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5a6b54'},grid:{color:'rgba(0,0,0,.05)'}},y:{ticks:{color:'#5a6b54',callback:v=>'$'+v+'M'},grid:{color:'rgba(0,0,0,.05)'}}}}});}
+  }
+
+  // Break-even chart
+  if($('beChart')){
+    const occs=[50,55,60,65,70,75,80,85,90,95,100];
+    const cfVals=occs.map(o=>parseFloat(((gross*o/100-totalExp-annDebt)/1e6).toFixed(2)));
+    if(beChartObj){beChartObj.data.datasets[0].data=cfVals;beChartObj.update();}
+    else{beChartObj=new Chart($('beChart'),{type:'line',data:{labels:occs.map(o=>o+'%'),datasets:[{label:'Cash flow ($M)',data:cfVals,borderColor:'#1a3d0e',backgroundColor:'rgba(92,184,46,.07)',pointBackgroundColor:occs.map(o=>Math.abs(o-beOcc)<3?'#c0392b':'#5cb82e'),pointRadius:4,tension:.3,fill:true,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5a6b54'},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{color:'#5a6b54',callback:v=>'$'+v+'M'},grid:{color:'rgba(0,0,0,.04)'}}}}})}
+  }
+
+  // Timeline
+  if($('tl_wrap')){
+    const predev=g('tl_predev'),constr=g('tl_const'),lease=g('tl_lease'),hold=g('tl_hold')*12;
+    const total=predev+constr+lease+hold;
+    const phases=[
+      {l:'Pre-dev & permits',m:predev,c:'#e6a817',cf:'Equity deployment'},
+      {l:'Construction',m:constr,c:'#c0392b',cf:'-'+fmtM(annDebt/12*constr)+' interest'},
+      {l:'Lease-up',m:lease,c:'#1a7fc4',cf:'Ramp to stabilized'},
+      {l:'Stabilized hold',m:hold,c:'#1a3d0e',cf:'+'+fmtM(cashFlow)+'/yr'},
+    ];
+    const divider='<div style="width:2px;background:#fff;flex-shrink:0;"></div>';
+    $('tl_wrap').innerHTML=phases.map((p,i)=>{
+      const w=Math.max(Math.round(p.m/total*100),10);
+      const br=i===0?'8px 0 0 8px':i===3?'0 8px 8px 0':'0';
+      return`<div class="tl-phase" style="flex:${w};background:${p.c};border-radius:${br};"><p class="tl-label">${p.l}</p><p class="tl-dur">${p.m} mo</p><span class="tl-cf">${p.cf}</span></div>`;
+    }).join(divider);
+  }
+
+  triggerSave();
+}
+
+// ── SAVE / LOAD ──
+function triggerSave(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(saveData,800);
+}
+
+function saveData(){
+  const data={};
+  document.querySelectorAll('input[id]').forEach(el=>{data[el.id]=el.value;});
+  document.querySelectorAll('input:not([id])').forEach((el,i)=>{data['_i'+i]=el.value;});
+  data['_costMode']=costMode;
+  localStorage.setItem(SAVE_KEY,JSON.stringify(data));
+  if($('save-indicator'))$('save-indicator').textContent='Saved at '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+}
+
+function loadData(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(!raw)return;
+    const data=JSON.parse(raw);
+    document.querySelectorAll('input[id]').forEach(el=>{if(data[el.id]!==undefined)el.value=data[el.id];});
+    document.querySelectorAll('input:not([id])').forEach((el,i)=>{if(data['_i'+i]!==undefined)el.value=data['_i'+i];});
+    if(data['_costMode']==='simple') toggleCostMode();
+    if($('save-indicator'))$('save-indicator').textContent='Data loaded from last session.';
+  }catch(e){}
+}
+
+function newProject(){
+  if(!confirm('Start a new project? This will clear all current values.'))return;
+  localStorage.removeItem(SAVE_KEY);
+  location.reload();
+}
+
+function exportPDF(){
+  const pname=($('project-name')&&$('project-name').value)||'Deal Analysis';
+  document.title=pname+' — Deal Analysis';
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  const rp=$('tab-results');if(rp)rp.classList.add('active');
+  setTimeout(()=>window.print(),200);
+}
+
+document.addEventListener('input',e=>{
+  if(e.target.id==='project-name')return;
+  if(costMode==='simple'&&(e.target.id==='hard_per_sqft'||e.target.id==='bsf_simple')){calcSimple();return;}
+  calc();
+});
+
+loadData();
+calc();
+</script>
+</body>
+</html>
